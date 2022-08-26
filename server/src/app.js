@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
+const thumbsupply = require("thumbsupply");
 
 const videos = [
   {
@@ -74,6 +75,12 @@ app.get("/video/:id", (req, res) => {
     res.writeHead(200, head);
     file.pipe(res);
   }
+});
+
+app.get("/video/:id/poster", (req, res) => {
+  thumbsupply
+    .generateThumbnail(path.join(__dirname, `assets/${req.params.id}.mp4`))
+    .then((thumb) => res.sendFile(thumb));
 });
 
 app.listen(4000, () => console.log(`Server up on port 4000`));
