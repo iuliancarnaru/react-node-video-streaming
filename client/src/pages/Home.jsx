@@ -26,9 +26,15 @@ function Home() {
           {videos?.map((video) => (
             <div className="col-md-4" key={video.id}>
               <Link to={`/player/${video.id}`}>
-                <div className="card border-0">
+                <div className="card border-0 mb-3">
                   <img
-                    src={`http://localhost:4000/${video.poster}`}
+                    style={{
+                      width: "150px",
+                      display: "flex",
+                      alignSelf: "center",
+                    }}
+                    // src={`http://localhost:4000${video.poster}`}
+                    src={`https://wearejde.com/wp-content/uploads/woocommerce-placeholder-600x600.png`}
                     alt={video.name}
                   />
                   <div className="card-body">

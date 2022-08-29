@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const thumbsupply = require("thumbsupply");
+const helmet = require("helmet");
 
 const videos = [
   {
@@ -32,7 +33,15 @@ const videos = [
 ];
 
 const app = express();
+
 app.use(cors());
+// app.use(
+//   helmet({
+//     crossOriginEmbedderPolicy: true,
+//     crossOriginOpenerPolicy: { policy: "same-origin" },
+//     crossOriginResourcePolicy: { policy: "same-origin" },
+//   })
+// );
 
 app.get("/video/:id/data", (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -77,10 +86,10 @@ app.get("/video/:id", (req, res) => {
   }
 });
 
-app.get("/video/:id/poster", (req, res) => {
-  thumbsupply
-    .generateThumbnail(path.join(__dirname, `assets/${req.params.id}.mp4`))
-    .then((thumb) => res.sendFile(thumb));
-});
+// app.get("/video/:id/poster", (req, res) => {
+//   thumbsupply
+//     .generateThumbnail(path.join(__dirname, `assets/${req.params.id}.mp4`))
+//     .then((thumb) => res.sendFile(thumb));
+// });
 
 app.listen(4000, () => console.log(`Server up on port 4000`));
