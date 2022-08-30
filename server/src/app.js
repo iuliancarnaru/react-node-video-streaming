@@ -1,9 +1,13 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const cors = require("cors");
-const thumbsupply = require("thumbsupply");
-const helmet = require("helmet");
+import express from "express";
+import { statSync, createReadStream } from "fs";
+import { join } from "path";
+import cors from "cors";
+import helmet from "helmet";
+import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
+import path from "path";
+import PQueue from "p-queue";
+
+const __dirname = path.resolve();
 
 const videos = [
   {
@@ -32,16 +36,29 @@ const videos = [
   },
 ];
 
+const ffmpegInstance = createFFmpeg({ log: true });
+let ffmpegLoadingPromise = ffmpegInstance.load();
+const requestQueue = new PQueue({ concurrency: 1 });
+
+async function getFFmpeg() {
+  if (ffmpegLoadingPromise) {
+    await ffmpegLoadingPromise;
+    ffmpegLoadingPromise = undefined;
+  }
+
+  return ffmpegInstance;
+}
+
 const app = express();
 
 app.use(cors());
-// app.use(
-//   helmet({
-//     crossOriginEmbedderPolicy: true,
-//     crossOriginOpenerPolicy: { policy: "same-origin" },
-//     crossOriginResourcePolicy: { policy: "same-origin" },
-//   })
-// );
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: true,
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    crossOriginResourcePolicy: { policy: "same-origin" },
+  })
+);
 
 app.get("/video/:id/data", (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -53,8 +70,8 @@ app.get("/videos", (req, res) => {
 });
 
 app.get("/video/:id", (req, res) => {
-  const videoPath = path.join(__dirname, `assets/${req.params.id}.mp4`);
-  const stat = fs.statSync(videoPath);
+  const videoPath = join(__dirname, `src/assets/${req.params.id}.mp4`);
+  const stat = statSync(videoPath);
   const fileSize = stat.size;
   const range = req.headers.range;
 
@@ -64,7 +81,7 @@ app.get("/video/:id", (req, res) => {
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
     const chunkSize = end - start + 1;
 
-    const file = fs.createReadStream(videoPath, { start, end });
+    const file = createReadStream(videoPath, { start, end });
     const head = {
       "Content-Range": `bytes ${start}-${end}/${fileSize}`,
       "Accept-Ranges": `bytes`,
@@ -75,7 +92,7 @@ app.get("/video/:id", (req, res) => {
     res.writeHead(206, head);
     file.pipe(res);
   } else {
-    const file = fs.createReadStream(videoPath);
+    const file = createReadStream(videoPath);
     const head = {
       "Content-Length": fileSize,
       "Content-Type": `video/mp4`,
@@ -86,10 +103,46 @@ app.get("/video/:id", (req, res) => {
   }
 });
 
-// app.get("/video/:id/poster", (req, res) => {
-//   thumbsupply
-//     .generateThumbnail(path.join(__dirname, `assets/${req.params.id}.mp4`))
-//     .then((thumb) => res.sendFile(thumb));
-// });
+app.get("/video/:id/poster", async (req, res) => {
+  try {
+    const ffmpeg = await getFFmpeg();
+
+    const inputFileName = `input-video.mp4`;
+    const outputFileName = `output-image.png`;
+    let outputData = null;
+
+    await requestQueue.add(async () => {
+      ffmpeg.FS(
+        "writeFile",
+        inputFileName,
+        await fetchFile(join(__dirname, `src/assets/${req.params.id}.mp4`))
+      );
+
+      await ffmpeg.run(
+        "-i",
+        inputFileName,
+        "-filter:v",
+        "thumbnail",
+        "-frames:v",
+        "1",
+        outputFileName
+      );
+
+      outputData = ffmpeg.FS("readFile", outputFileName);
+      ffmpeg.FS("unlink", inputFileName);
+      ffmpeg.FS("unlink", outputFileName);
+    });
+
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Disposition": `attachment;filename=${outputFileName}`,
+      "Content-Length": outputData.length,
+    });
+    res.end(Buffer.from(outputData, "binary"));
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
+  }
+});
 
 app.listen(4000, () => console.log(`Server up on port 4000`));

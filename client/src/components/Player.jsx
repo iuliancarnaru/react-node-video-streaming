@@ -24,7 +24,12 @@ function Player() {
   return (
     <div className="App">
       <div style={{ width: "800px" }} className="App-header">
-        <video style={{ width: "100%", height: "100%" }} controls autoPlay>
+        <video
+          style={{ width: "100%", height: "100%" }}
+          controls
+          autoPlay
+          crossOrigin="anonymous"
+        >
           <source
             src={`http://localhost:4000/video/${id}`}
             type="video/mp4"

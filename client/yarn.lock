@@ -789,11 +789,6 @@ update-browserslist-db@^1.0.5:
     escalade "^3.1.1"
     picocolors "^1.0.0"
 
-vite-plugin-cross-origin-isolation@^0.1.6:
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/vite-plugin-cross-origin-isolation/-/vite-plugin-cross-origin-isolation-0.1.6.tgz#1bde75138ad318da0060cf635a14f3f85d5efb64"
-  integrity sha512-OY0naW9nPUDrKTffYnY7FRYXOgZdHoNwMGpPxUmj/n32mGZi01fcq+J536jkmwGWX7DLT95XBQVHHbrAJzTvrw==
-
 vite@^3.0.7:
   version "3.0.9"
   resolved "https://registry.yarnpkg.com/vite/-/vite-3.0.9.tgz#45fac22c2a5290a970f23d66c1aef56a04be8a30"
