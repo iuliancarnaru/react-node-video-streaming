@@ -1,11 +1,12 @@
 import express from "express";
-import { statSync, createReadStream } from "fs";
+import { statSync, createReadStream, fstat } from "fs";
 import { join } from "path";
 import cors from "cors";
 import helmet from "helmet";
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import path from "path";
 import PQueue from "p-queue";
+import fs from "fs";
 
 const __dirname = path.resolve();
 
@@ -129,6 +130,12 @@ app.get("/video/:id/poster", async (req, res) => {
       );
 
       outputData = ffmpeg.FS("readFile", outputFileName);
+
+      fs.writeFileSync(
+        join(__dirname, `src/assets/${req.params.id}.png`),
+        outputData
+      );
+
       ffmpeg.FS("unlink", inputFileName);
       ffmpeg.FS("unlink", outputFileName);
     });
